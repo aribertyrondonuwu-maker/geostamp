@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b0f14">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="GeoStamp KNMP">
+<title>GeoStamp KNMP 2027 – FPIK UNSRAT</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<style>
+:root{--bg:#0b0f14;--panel:#141a22;--line:#243041;--tx:#e8eef5;--mut:#8a98a8;--acc:#22c55e;--warn:#f59e0b;--bad:#ef4444}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--tx);font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow:hidden}
+button{font:inherit;cursor:pointer;color:inherit}
+#app{position:fixed;inset:0;display:flex;flex-direction:column}
+header{display:flex;align-items:center;gap:8px;padding:calc(env(safe-area-inset-top) + 8px) 12px 8px;background:var(--bg);z-index:2}
+.brand{font-weight:700;flex:1;white-space:nowrap}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:var(--panel);border:1px solid var(--line);font-size:13px;max-width:46vw;overflow:hidden}
+.chip span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--mut);flex:none}
+#vf{position:relative;flex:1;background:#000;overflow:hidden}
+#vf video{width:100%;height:100%;object-fit:cover;display:block}
+#noCam{position:absolute;inset:0;display:none;align-items:center;justify-content:center;text-align:center;padding:24px;color:var(--mut)}
+#stampPrev{position:absolute;left:8px;right:8px;bottom:8px;display:flex;gap:8px;padding:8px;border-radius:10px;background:rgba(0,0,0,.55);font-size:12px;line-height:1.35;pointer-events:none}
+#stampPrev canvas{width:72px;height:72px;border-radius:6px;flex:none;background:#223}
+#stampTxt{min-width:0;overflow:hidden}
+#stampTxt b{font-size:13px}
+.flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;transition:opacity .2s}
+.qbar{display:flex;gap:8px;padding:10px 12px 0}.qbar select{padding:9px 10px;font-size:15px}
+.controls{display:flex;align-items:center;justify-content:space-around;padding:14px 16px calc(env(safe-area-inset-bottom) + 14px)}
+.shutter{width:72px;height:72px;border-radius:50%;border:4px solid #fff;background:#fff;box-shadow:inset 0 0 0 3px #000}
+.shutter:active{transform:scale(.94)}
+.shutter:disabled{opacity:.5}
+.icbtn{width:50px;height:50px;border-radius:50%;background:var(--panel);border:1px solid var(--line);display:grid;place-items:center;font-size:20px;position:relative}
+.badge{position:absolute;top:-4px;right:-4px;background:var(--acc);color:#04130a;font-size:11px;font-weight:700;border-radius:999px;padding:1px 6px}
+.btn{padding:11px 14px;border-radius:10px;border:1px solid var(--line);background:var(--panel);font-weight:600}
+.btn.pri{background:var(--acc);border-color:var(--acc);color:#04130a}
+.btn.dan{color:var(--bad)}
+.btn.sm{padding:7px 10px;font-size:13px}
+.sheet{position:fixed;inset:0;z-index:10;display:none;flex-direction:column;background:var(--bg)}
+.sheet.open{display:flex}
+.hd{display:flex;align-items:center;gap:8px;padding:calc(env(safe-area-inset-top) + 10px) 12px 10px;border-bottom:1px solid var(--line)}
+.hd h2{flex:1;margin:0;font-size:17px}
+.bd{flex:1;overflow:auto;padding:14px;-webkit-overflow-scrolling:touch}
+.ft{display:flex;gap:8px;flex-wrap:wrap;padding:10px 12px calc(env(safe-area-inset-bottom) + 10px);border-top:1px solid var(--line)}
+.ft .btn{flex:1 1 30%}
+label{display:block;font-size:13px;color:var(--mut);margin:12px 0 4px}
+input,textarea,select{width:100%;padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--tx);font:inherit;font-size:16px}
+textarea{min-height:70px;resize:vertical}
+.check{display:flex;gap:10px;align-items:center;color:var(--tx);font-size:15px}
+.check input{width:20px;height:20px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(105px,1fr));gap:6px}
+.it{position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;background:var(--panel)}
+.it img{width:100%;height:100%;object-fit:cover;display:block}
+.it span{position:absolute;left:0;right:0;bottom:0;padding:3px 5px;font-size:10px;background:rgba(0,0,0,.65);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.it.sel{outline:3px solid var(--acc);outline-offset:-3px}
+.it.sel::after{content:"✓";position:absolute;top:4px;right:4px;background:var(--acc);color:#04130a;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-weight:700}
+#prevImg{width:100%;border-radius:10px;display:block;background:var(--panel)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:14px;margin:14px 0 0}
+.kv dt{color:var(--mut)} .kv dd{margin:0;word-break:break-word}
+.kv a{color:var(--acc)}
+.muted{color:var(--mut);font-size:13px}
+.note{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:0 0 12px;font-size:13px;color:var(--mut)}
+#start{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center;background:var(--bg)}
+#start p{color:var(--mut);max-width:360px;margin:0}
+#start .btn{min-width:240px}
+.toast{position:fixed;left:50%;bottom:130px;transform:translateX(-50%);background:rgba(0,0,0,.85);color:#fff;padding:9px 14px;border-radius:10px;font-size:14px;z-index:40;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw;text-align:center}
+.toast.on{opacity:1}
+#busy{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.6);font-weight:600}
+#busy.on{display:flex}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="brand">📍 KNMP</div>
+    <button class="chip" id="gpsChip" title="Status GPS"><span class="dot" id="gpsDot"></span><span id="gpsTxt">GPS…</span></button>
+    <button class="chip" id="actChip" title="Lokasi & surveyor">✎ <span id="actTxt">Pilih lokasi</span></button>
+  </header>
+  <div id="vf">
+    <video id="video" playsinline muted autoplay></video>
+    <div id="noCam">Kamera langsung tidak tersedia di browser ini.<br>Tekan tombol rana untuk memakai kamera bawaan perangkat — stempel tetap ditambahkan.</div>
+    <div id="stampPrev"><canvas id="mapPrev" width="144" height="144"></canvas><div id="stampTxt"></div></div>
+    <div class="flash" id="flash"></div>
+  </div>
+  <div class="qbar"><select id="qTah" aria-label="Tahap kegiatan"></select><select id="qJen" aria-label="Jenis foto"></select></div>
+  <div class="controls">
+    <button class="icbtn" id="galBtn" aria-label="Galeri">🖼<span class="badge" id="galCount" hidden>0</span></button>
+    <button class="shutter" id="shutter" aria-label="Ambil foto"></button>
+    <button class="icbtn" id="flipBtn" aria-label="Ganti kamera">🔄</button>
+  </div>
+</div>
+
+<input type="file" id="fileCam" accept="image/*" capture="environment" hidden>
+
+<div id="start">
+  <div style="font-size:52px">📍📷</div>
+  <h1 style="margin:0;font-size:24px">GeoStamp KNMP 2027</h1><div class="muted">Survei Calon Lokasi Kampung Nelayan Merah Putih · FPIK UNSRAT</div>
+  <p>Foto dokumentasi berkoordinat (geotagging) dengan stempel lokasi, desa, surveyor, tahap kegiatan, jenis foto, tanggal dan jam. Ekspor per lokasi: ZIP, rekap Excel/CSV, KML, dan laporan.</p>
+  <button class="btn pri" id="startBtn">Mulai – izinkan kamera &amp; lokasi</button>
+  <button class="btn" id="startNative">Pakai kamera bawaan perangkat</button>
+  <p class="muted" id="httpsWarn" hidden>⚠️ Halaman ini tidak dibuka lewat HTTPS, jadi kamera dan GPS akan diblokir browser.</p>
+</div>
+
+<!-- Informasi kegiatan -->
+<div class="sheet" id="shInfo">
+  <div class="hd"><h2>Lokasi &amp; surveyor</h2><button class="btn sm" data-close>Tutup</button></div>
+  <div class="bd">
+    <label for="fLok">Lokasi penugasan</label>
+    <select id="fLok"></select>
+    <div id="lokInfo" class="note" style="margin:8px 0 0" hidden></div>
+    <div id="lokManual" hidden>
+      <label for="fDesa">Nama tempat / kegiatan</label>
+      <input id="fDesa" placeholder="mis. Pembekalan surveyor, Hotel X">
+      <label for="fWil">Kota / kabupaten</label>
+      <input id="fWil" placeholder="mis. Kota Manado">
+    </div>
+    <label for="fPet">Nama surveyor / pengambil foto</label>
+    <input id="fPet" placeholder="Terisi otomatis sesuai penugasan">
+    <label for="fKet">Keterangan foto (opsional)</label>
+    <textarea id="fKet" placeholder="mis. Batas lahan sisi utara, berbatasan dengan jalan desa"></textarea>
+    <p class="muted">Tahap kegiatan dan jenis foto dipilih langsung di layar kamera. Keterangan dikosongkan otomatis setelah setiap foto.</p>
+    <label class="check" style="margin-top:16px"><input type="checkbox" id="fMap" checked> Tampilkan peta mini di foto</label>
+    <label for="fSize">Ukuran teks stempel</label>
+    <select id="fSize"><option value="0.8">Kecil</option><option value="1" selected>Sedang</option><option value="1.25">Besar</option></select>
+    <label for="fPos">Posisi stempel</label>
+    <select id="fPos"><option value="bottom" selected>Bawah</option><option value="top">Atas</option></select>
+    <p class="muted">Isian disimpan di perangkat dan dipakai untuk foto-foto berikutnya.</p>
+  </div>
+  <div class="ft"><button class="btn pri" data-close>Simpan</button></div>
+</div>
+
+<!-- Detail / pratinjau foto -->
+<div class="sheet" id="shPrev">
+  <div class="hd"><h2 id="pvTitle">Detail foto</h2><button class="btn sm" data-close>Tutup</button></div>
+  <div class="bd"><img id="prevImg" alt="Foto"><dl class="kv" id="prevKv"></dl></div>
+  <div class="ft">
+    <button class="btn" id="pvShare">Bagikan / Simpan ke Galeri HP</button>
+    <button class="btn pri" id="pvDl">Unduh JPEG</button>
+    <button class="btn dan" id="pvDel">Hapus</button>
+  </div>
+</div>
+
+<!-- Galeri -->
+<div class="sheet" id="shGal">
+  <div class="hd"><h2>Galeri (<span id="galN">0</span>)</h2><button class="btn sm" id="selBtn">Pilih</button><button class="btn sm" data-close>Tutup</button></div>
+  <div class="bd">
+    <p class="note">Foto tersimpan di penyimpanan browser perangkat ini. Ekspor secara berkala agar tidak hilang bila data browser dibersihkan.</p>
+    <select id="galF" style="margin-bottom:10px"></select>
+    <div class="grid" id="grid"></div>
+    <p class="muted" id="galEmpty">Belum ada foto.</p>
+  </div>
+  <div class="ft">
+    <div class="muted" id="exInfo" style="flex-basis:100%">Ekspor semua foto</div>
+    <button class="btn pri" id="exZip">ZIP (foto + data)</button>
+    <button class="btn" id="exRep">Laporan (cetak/PDF)</button>
+    <button class="btn" id="exCsv">Excel (CSV)</button>
+    <button class="btn" id="exKml">KML (Google Earth)</button>
+    <button class="btn" id="exJson">JSON</button>
+    <button class="btn dan" id="exDel" hidden>Hapus terpilih</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div id="busy"><span id="busyTxt">Memproses…</span></div>
+
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const st={pos:null,stream:null,facing:'environment',native:false,tiles:new Map(),map:null,lastGeo:null,lastGeoT:0,addrManual:false,recs:[],sel:new Set(),selMode:false,cur:null,curUrl:null};
+const LS={get(k,d){try{const v=localStorage.getItem('gs_'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem('gs_'+k,JSON.stringify(v))}catch(e){}}};
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('on'),2600)}
+function busy(on,txt){$('busy').classList.toggle('on',on);if(txt)$('busyTxt').textContent=txt}
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* ---------- Waktu ---------- */
+const HARI=['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+const BULAN=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+const p2=n=>String(n).padStart(2,'0');
+function tzName(d){const o=-d.getTimezoneOffset()/60;return o===7?'WIB':o===8?'WITA':o===9?'WIT':'GMT'+(o>=0?'+':'')+o}
+function tzOff(d){const m=-d.getTimezoneOffset(),a=Math.abs(m);return (m>=0?'+':'-')+p2(a/60|0)+':'+p2(a%60)}
+const fDate=d=>`${HARI[d.getDay()]}, ${p2(d.getDate())} ${BULAN[d.getMonth()]} ${d.getFullYear()}`;
+const fTime=d=>`${p2(d.getHours())}:${p2(d.getMinutes())}:${p2(d.getSeconds())} ${tzName(d)}`;
+const ymd=d=>`${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`;
+const hms=d=>`${p2(d.getHours())}:${p2(d.getMinutes())}:${p2(d.getSeconds())}`;
+const fCoord=(a,b)=>`${a.toFixed(6)}, ${b.toFixed(6)}`;
+function dms(v,pos,neg){const a=Math.abs(v),d=Math.floor(a),mf=(a-d)*60,m=Math.floor(mf),s=(mf-m)*60;return `${d}°${p2(m)}'${s.toFixed(1)}"${v>=0?pos:neg}`}
+
+/* ---------- Form kegiatan ---------- */
+const KAB={BMG:'Kabupaten Bolaang Mongondow',BMS:'Kabupaten Bolaang Mongondow Selatan',BMU:'Kabupaten Bolaang Mongondow Utara',BTG:'Kota Bitung',MNH:'Kabupaten Minahasa'};
+const KABS={BMG:'Kab. Bolaang Mongondow',BMS:'Kab. Bolaang Mongondow Selatan',BMU:'Kab. Bolaang Mongondow Utara',BTG:'Kota Bitung',MNH:'Kab. Minahasa'};
+const KOORD={BMG:'Dr. Ir. Hariyani Sambali, M.Sc',BMS:'Dr. Ir. Ari Berty Rondonuwu, M.Si, M.Sc',BMU:'Dr. Ir. James J. H. Paulus, M.Si',BTG:'Ir. Jenki Pongoh, MP',MNH:'Dr. Erly Yosef Kaligis, S.Pi, M.Si'};
+const LOK=[
+ [1,'BMG','Lolak','Labuan Uki','Ernawati Paputungan, S.Pi'],[2,'BMG','Lolak','Lolak','Apriali Riandi Sawal, S.Pi'],[3,'BMG','Lolak','Motabang','Julieffel Polii, S.Pi'],
+ [4,'BMG','Poigar','Mariri Baru','Apriska Gracia Christy Kalalo, S.T'],[5,'BMG','Sang Tombolang','Maelang','Hernita Paputungan, S.Pi'],[6,'BMG','Sang Tombolang','Pasir Putih','Noldy Berny Medellu, S.Pi'],
+ [7,'BMS','Bolaang Uki','Dudepo Barat','Tri Sutrisno Paputungan, S.Pi'],[8,'BMS','Helumo','Biniha Timur','Sutandi Makalalag, S.Kel'],[9,'BMS','Helumo','Trans Patoa','Zulkifli Paputungan, S.Pi'],
+ [10,'BMS','Pinolosian','Pinolosian Selatan','Seftirent D. Gobel, S.Pi'],
+ [11,'BMU','Bintauna','Minanga','Mahdi Masud, S.Pi'],[12,'BMU','Bolangitang Barat','Bolangitang II','Andika Machmud, S.Pi'],[13,'BMU','Bolangitang Barat','Wakat','Andaryan Baba, S.Pi'],
+ [14,'BMU','Pinogaluman','Buko','Norisman Tumuhu, S.H'],[15,'BMU','Bolangitang Timur','Binjeita 1','Warsteff Frits Abisada, S.Pi'],[16,'BMU','Bolangitang Timur','Biontong','Lili Fauziah Matoriang, S.Pd'],
+ [17,'BTG','Aertembaga','Aertembaga Dua','Ir. Jackry Lolowang, M.Si'],[18,'BTG','Aertembaga','Aertembaga Satu','Ir. Treis Supit, M.Si'],[19,'BTG','Aertembaga','Kasawari','Syahrul Arifin Luhkan'],
+ [20,'BTG','Aertembaga','Makawidey','Whining Purnadwiyanti'],[21,'BTG','Lembeh Selatan','Paudean','Septyviana Paath'],[22,'BTG','Lembeh Utara','Kareko','Yenni Rumagit, S.Pi'],
+ [23,'BTG','Matuari','Manembo Nembo','Suryadi Halim, S.Pi'],[24,'BTG','Ranowulu','Batu Putih Bawah','Petrus Budiman, S.Pi'],
+ [25,'MNH','Kombi','Ranowangko Dua','Deivy Vandy Maki, S.Pi'],[26,'MNH','Lembean Timur','Atep Oki','Ansye Anita Mukuan'],[27,'MNH','Mandolang','Kalasey Satu','April Pangau, S.Kel'],
+ [28,'MNH','Mandolang','Tateli','Rein Bawole'],[29,'MNH','Mandolang','Tateli Dua','Jeremia Watung, S.Pi'],[30,'MNH','Mandolang','Tateli Weru','Ir. Arnold Tulandi'],
+ [31,'MNH','Tombariri','Poopoh','Ir. Reiny Daipaha'],[32,'MNH','Tombariri','Tambala','Suprian Abdurahman, S.Kel']
+].map(([no,kab,kec,desa,sv])=>({id:p2(no),kode:p2(no)+'-'+kab,kab,kec,desa,sv,pre:kab==='BTG'?'Kel.':'Desa'}));
+const TAHAP=['Pemeriksaan kondisi aktual lokasi','Pertemuan dengan perangkat desa/kelurahan','Verifikasi dan penilaian lokasi','FGD tingkat desa/kab/kota','Fasilitasi kesiapan lokasi','Verifikasi pemenuhan SMK','Pemaparan hasil kerja mitra','Koordinasi dengan Pemda','Mobilisasi / perjalanan tim','Pembekalan dan standardisasi','Lainnya'];
+const JENIS=['Kondisi fisik eksisting','Batas lahan','Status/dokumen lahan','Sarana dan prasarana','Aksesibilitas (jalan/dermaga)','Aktivitas perikanan','Kelompok usaha/koperasi','Wawancara informan kunci','FGD','Koordinasi Pemda/desa','Dokumen pendukung','Daftar hadir','Foto bersama tim','Lainnya'];
+const slug=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^\w\s-]/g,'').trim().replace(/[\s-]+/g,'_');
+function lokMeta(){
+  const v=$('fLok').value;
+  if(v==='X'){const n=$('fDesa').value.trim(),w=$('fWil').value.trim();return{kode:'UMUM',kab:'',kec:'',desa:n,koord:'',lokasi:[n,w].filter(Boolean).join(', '),ok:!!n}}
+  const L=LOK.find(l=>l.id===v);if(!L)return{kode:'',ok:false,lokasi:''};
+  return{kode:L.kode,kab:KAB[L.kab],kec:L.kec,desa:L.desa,koord:KOORD[L.kab],sv:L.sv,lokasi:`${L.pre} ${L.desa}, Kec. ${L.kec}, ${KABS[L.kab]}`,ok:true};
+}
+function form(){return{...lokMeta(),lok:$('fLok').value,pet:$('fPet').value.trim(),ket:$('fKet').value.trim(),tah:$('qTah').value,jen:$('qJen').value,map:$('fMap').checked,size:parseFloat($('fSize').value)||1,pos:$('fPos').value}}
+function fillSelects(){
+  let h='<option value="">— pilih lokasi penugasan —</option>';
+  for(const k of Object.keys(KAB)){h+=`<optgroup label="${KAB[k]}">`+LOK.filter(l=>l.kab===k).map(l=>`<option value="${l.id}">${l.id} · ${l.desa} (${l.kec})</option>`).join('')+'</optgroup>'}
+  h+='<option value="X">Lainnya – kegiatan di luar 32 lokasi</option>';$('fLok').innerHTML=h;
+  $('qTah').innerHTML=TAHAP.map(t=>`<option>${t}</option>`).join('');$('qJen').innerHTML=JENIS.map(t=>`<option>${t}</option>`).join('');
+}
+function loadForm(){fillSelects();$('fLok').value=LS.get('lok','');$('fDesa').value=LS.get('desa','');$('fWil').value=LS.get('wil','');$('fPet').value=LS.get('pet','');$('fKet').value='';
+  $('qTah').value=LS.get('tah',TAHAP[0]);if(!$('qTah').value)$('qTah').value=TAHAP[0];$('qJen').value=LS.get('jen',JENIS[0]);if(!$('qJen').value)$('qJen').value=JENIS[0];
+  $('fMap').checked=LS.get('map',true);$('fSize').value=LS.get('size','1');$('fPos').value=LS.get('pos','bottom');lokUi()}
+function saveForm(){const f=form();LS.set('lok',f.lok);LS.set('desa',$('fDesa').value);LS.set('wil',$('fWil').value);LS.set('pet',f.pet);LS.set('tah',f.tah);LS.set('jen',f.jen);LS.set('map',f.map);LS.set('size',$('fSize').value);LS.set('pos',f.pos)}
+function lokUi(){const m=lokMeta(),x=$('fLok').value==='X';$('lokManual').hidden=!x;const i=$('lokInfo');
+  if(m.ok&&!x){i.hidden=false;i.innerHTML=`<b>${esc(m.kode)}</b> · ${esc(m.lokasi)}<br>Surveyor: ${esc(m.sv)}<br>Koordinator wilayah: ${esc(m.koord)}`}else i.hidden=true}
+function addKegHist(){}
+/* ---------- GPS ---------- */
+function setGps(c,t){$('gpsDot').style.background=c==='ok'?'var(--acc)':c==='mid'?'var(--warn)':'var(--bad)';$('gpsTxt').textContent=t}
+function startGeo(){
+  if(!('geolocation' in navigator)){setGps('bad','GPS tidak didukung');return}
+  setGps('mid','Mencari GPS…');
+  navigator.geolocation.watchPosition(p=>{
+    const c=p.coords;st.pos={lat:c.latitude,lon:c.longitude,acc:c.accuracy,alt:c.altitude,t:p.timestamp||Date.now()};
+    const a=Math.round(c.accuracy);setGps(a<=20?'ok':a<=100?'mid':'bad','±'+a+' m');onPos();
+  },e=>{setGps('bad',e.code===1?'Izin lokasi ditolak':'GPS tidak tersedia');if(e.code===1)toast('Izinkan akses lokasi di pengaturan browser agar koordinat tercatat.')},
+  {enableHighAccuracy:true,maximumAge:3000,timeout:30000});
+}
+function dist(a,b){const R=6371e3,r=Math.PI/180,dl=(b.lat-a.lat)*r,dn=(b.lon-a.lon)*r,x=Math.sin(dl/2)**2+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dn/2)**2;return 2*R*Math.asin(Math.sqrt(x))}
+function onPos(){
+  const p=st.pos;
+  if($('fMap').checked&&(!st.map||dist(st.map,p)>5))loadTiles(p.lat,p.lon).then(drawMapPrev);
+  updPrev();
+}
+/* ---------- Peta mini (OpenStreetMap) ---------- */
+const Z=16;
+function tileXY(lat,lon,z){const n=2**z,x=(lon+180)/360*n,r=lat*Math.PI/180,y=(1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*n;return{x,y}}
+function getTile(z,x,y){const k=`${z}/${x}/${y}`;if(st.tiles.has(k))return st.tiles.get(k);
+  const pr=new Promise(res=>{const i=new Image();i.crossOrigin='anonymous';i.onload=()=>res(i);i.onerror=()=>{st.tiles.delete(k);res(null)};i.src=`https://tile.openstreetmap.org/${k}.png`});st.tiles.set(k,pr);return pr}
+async function loadTiles(lat,lon){
+  const {x,y}=tileXY(lat,lon,Z),tx=Math.floor(x),ty=Math.floor(y);
+  const c=document.createElement('canvas');c.width=c.height=768;const g=c.getContext('2d');g.fillStyle='#dfe6ec';g.fillRect(0,0,768,768);let ok=0;
+  await Promise.all([-1,0,1].flatMap(dx=>[-1,0,1].map(async dy=>{const im=await getTile(Z,tx+dx,ty+dy);if(im){g.drawImage(im,(dx+1)*256,(dy+1)*256);ok++}})));
+  st.map={c,px:(x-tx+1)*256,py:(y-ty+1)*256,ok,lat,lon};return st.map;
+}
+function rr(g,x,y,w,h,r){g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath()}
+function drawMap(g,x,y,s,m){
+  g.save();rr(g,x,y,s,s,s*.06);g.clip();
+  const v=300;g.drawImage(m.c,m.px-v/2,m.py-v/2,v,v,x,y,s,s);
+  const cx=x+s/2,cy=y+s/2,r=Math.max(4,s*.055);
+  g.fillStyle='rgba(239,68,68,.22)';g.beginPath();g.arc(cx,cy,r*2.6,0,7);g.fill();
+  g.fillStyle='#ef4444';g.strokeStyle='#fff';g.lineWidth=Math.max(1.5,r*.45);g.beginPath();g.arc(cx,cy,r,0,7);g.fill();g.stroke();
+  const fs=Math.max(8,s*.055);g.font=`${fs}px system-ui,sans-serif`;const t='© OpenStreetMap';const tw=g.measureText(t).width;
+  g.fillStyle='rgba(255,255,255,.8)';g.fillRect(x+s-tw-fs*.6,y+s-fs*1.4,tw+fs*.6,fs*1.4);g.fillStyle='#333';g.textBaseline='alphabetic';g.fillText(t,x+s-tw-fs*.3,y+s-fs*.38);
+  g.restore();g.save();rr(g,x,y,s,s,s*.06);g.strokeStyle='rgba(255,255,255,.85)';g.lineWidth=Math.max(1.5,s*.012);g.stroke();g.restore();
+}
+function drawMapPrev(){const c=$('mapPrev'),g=c.getContext('2d');g.clearRect(0,0,144,144);if(st.map&&st.map.ok)drawMap(g,0,0,144,st.map);else{g.fillStyle='#223';g.fillRect(0,0,144,144)}}
+
+/* ---------- Stempel ---------- */
+function stampLines(m){
+  const L=[];
+  L.push({t:m.jen||'Dokumentasi',w:700,s:1.3});
+  L.push({t:(m.lokasi||'Lokasi belum dipilih')+(m.kode&&m.kode!=='UMUM'?`  [${m.kode}]`:''),w:600,s:1.02,wrap:2});
+  L.push({t:m.tglPanjang+'  •  '+m.jam+' '+m.zonaNama,w:600,s:1});
+  if(m.lat!=null){let t=`${fCoord(m.lat,m.lon)}  (±${Math.round(m.acc)} m`;if(m.alt!=null)t+=` • alt ${Math.round(m.alt)} m`;L.push({t:t+')',s:1})}
+  else L.push({t:'Koordinat GPS tidak tersedia',s:1});
+  L.push({t:'Survei KNMP 2027 • '+(m.tah||''),s:.92,wrap:2});
+  L.push({t:[m.pet&&('Surveyor: '+m.pet),'FPIK UNSRAT'].filter(Boolean).join('  •  '),s:.92,wrap:2});
+  if(m.ket)L.push({t:m.ket,s:.92,wrap:3,it:true});
+  return L;
+}
+function fontOf(l,u){return `${l.it?'italic ':''}${l.w||400} ${Math.round(u*l.s)}px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif`}
+function wrap(g,text,maxW,maxLines){
+  const words=text.split(/\s+/),out=[];let line='';
+  for(const w of words){const t=line?line+' '+w:w;if(g.measureText(t).width<=maxW||!line)line=t;else{out.push(line);line=w}}
+  if(line)out.push(line);
+  if(out.length>maxLines){out.length=maxLines;let l=out[maxLines-1];while(l&&g.measureText(l+'…').width>maxW)l=l.slice(0,-1);out[maxLines-1]=l+'…'}
+  return out.map(l=>{while(g.measureText(l).width>maxW&&l.length>1)l=l.slice(0,-2)+'…';return l});
+}
+function renderStamp(g,W,H,m,opt,map){
+  const u=Math.min(W,H)*.03*opt.size,pad=u*1.1;
+  const ms=(opt.map&&m.lat!=null&&map&&map.ok)?Math.round(Math.min(W,H)*.26*Math.min(opt.size,1.1)):0;
+  const tx=pad+(ms?ms+pad:0),maxW=W-tx-pad;
+  const out=[];for(const l of stampLines(m)){g.font=fontOf(l,u);for(const t of wrap(g,l.t,maxW,l.wrap||1))out.push({...l,t})}
+  const lh=l=>u*l.s*1.3,textH=out.reduce((s,l)=>s+lh(l),0),bandH=Math.max(textH,ms)+pad*2;
+  const top=opt.pos==='top',y0=top?0:H-bandH;
+  const gr=top?g.createLinearGradient(0,bandH+u*3,0,0):g.createLinearGradient(0,y0-u*3,0,H);
+  gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(.25,'rgba(0,0,0,.45)');gr.addColorStop(1,'rgba(0,0,0,.72)');
+  g.fillStyle=gr;g.fillRect(0,top?0:y0-u*3,W,bandH+u*3);
+  if(ms)drawMap(g,pad,y0+pad+(bandH-pad*2-ms)/2,ms,map);
+  g.save();g.textBaseline='alphabetic';g.fillStyle='#fff';g.shadowColor='rgba(0,0,0,.75)';g.shadowBlur=u*.25;g.shadowOffsetY=u*.05;
+  let y=y0+pad+(bandH-pad*2-textH)/2;
+  out.forEach((l,i)=>{const h=lh(l);g.font=fontOf(l,u);g.fillStyle=i===0?'#ffe066':'#fff';g.fillText(l.t,tx,y+h*.78);y+=h});
+  g.restore();
+}
+function updPrev(){
+  const f=form(),d=new Date(),p=st.pos,lines=[];
+  lines.push('<b>'+esc(f.jen)+'</b>'+(f.ok?' — '+esc(f.desa):''));
+  lines.push(esc(fDate(d)+' • '+fTime(d)));
+  lines.push(p?esc(fCoord(p.lat,p.lon)+' (±'+Math.round(p.acc)+' m)'):'Mencari GPS…');
+  lines.push(esc(f.tah)+(f.pet?' • '+esc(f.pet):''));
+  $('stampTxt').innerHTML=lines.join('<br>');
+  $('mapPrev').style.display=f.map?'':'none';
+  $('stampPrev').style.top=f.pos==='top'?'8px':'';$('stampPrev').style.bottom=f.pos==='top'?'':'8px';
+  $('actTxt').textContent=f.ok?(f.kode!=='UMUM'?f.kode+' '+f.desa:f.desa):'Pilih lokasi';
+}
+/* ---------- EXIF (geotag) ---------- */
+const u16=n=>[(n>>8)&255,n&255],u32=n=>[(n>>>24)&255,(n>>>16)&255,(n>>>8)&255,n&255];
+const asc=s=>{const a=[];for(const c of String(s).normalize('NFD').replace(/[̀-ͯ]/g,'')){const k=c.charCodeAt(0);a.push(k>=32&&k<127?k:63)}a.push(0);return a};
+const rats=arr=>arr.flatMap(([n,d])=>[...u32(n),...u32(d)]);
+const E=(tag,type,count,bytes)=>({tag,type,count,bytes});
+const EA=(tag,s)=>{const b=asc(s);return E(tag,2,b.length,b)};
+const ifdSize=es=>2+es.length*12+4+es.reduce((s,e)=>s+(e.bytes.length>4?e.bytes.length+(e.bytes.length&1):0),0);
+function writeIfd(es,off){
+  es.sort((a,b)=>a.tag-b.tag);const out=[...u16(es.length)],data=[],dOff=off+2+es.length*12+4;
+  for(const e of es){out.push(...u16(e.tag),...u16(e.type),...u32(e.count));
+    if(e.bytes.length<=4){const v=[...e.bytes];while(v.length<4)v.push(0);out.push(...v)}
+    else{out.push(...u32(dOff+data.length));data.push(...e.bytes);if(e.bytes.length&1)data.push(0)}}
+  out.push(0,0,0,0);return out.concat(data);
+}
+function degR(v){const a=Math.abs(v),d=Math.floor(a),mf=(a-d)*60,m=Math.floor(mf),s=Math.round((mf-m)*60*10000);return[[d,1],[m,1],[s,10000]]}
+function buildExif(m,d){
+  const dt=`${d.getFullYear()}:${p2(d.getMonth()+1)}:${p2(d.getDate())} ${hms(d)}`;
+  const desc=['KNMP 2027',m.kode,m.jen,m.lokasi,m.ket].filter(Boolean).join(' | ');
+  const ifd0=[EA(0x010E,desc),EA(0x0131,'GeoStamp'),EA(0x0132,dt)];if(m.pet)ifd0.push(EA(0x013B,m.pet));
+  const exif=[EA(0x9003,dt),EA(0x9004,dt),EA(0x9010,m.zona),EA(0x9011,m.zona)];
+  const comment=['KNMP 2027',m.kode,m.lokasi,m.tah,m.jen,m.pet&&('Surveyor: '+m.pet),m.ket].filter(Boolean).join(' | ');
+  if(comment){const b=[...asc('ASCII').slice(0,5),0,0,0,...asc(comment).slice(0,-1)];exif.push(E(0x9286,7,b.length,b))}
+  const gps=[];
+  if(m.lat!=null){
+    const ud=new Date(m.gpsTime||d.getTime());
+    gps.push(E(0x0000,1,4,[2,3,0,0]),EA(0x0001,m.lat>=0?'N':'S'),E(0x0002,5,3,rats(degR(m.lat))),EA(0x0003,m.lon>=0?'E':'W'),E(0x0004,5,3,rats(degR(m.lon))),
+      E(0x0007,5,3,rats([[ud.getUTCHours(),1],[ud.getUTCMinutes(),1],[ud.getUTCSeconds(),1]])),EA(0x0012,'WGS-84'),
+      EA(0x001D,`${ud.getUTCFullYear()}:${p2(ud.getUTCMonth()+1)}:${p2(ud.getUTCDate())}`),E(0x001F,5,1,rats([[Math.round(m.acc*100),100]])));
+    if(m.alt!=null)gps.push(E(0x0005,1,1,[m.alt<0?1:0]),E(0x0006,5,1,rats([[Math.round(Math.abs(m.alt)*100),100]])));
+  }
+  const pE=E(0x8769,4,1,[0,0,0,0]);ifd0.push(pE);let pG=null;if(gps.length){pG=E(0x8825,4,1,[0,0,0,0]);ifd0.push(pG)}
+  const oE=8+ifdSize(ifd0),oG=oE+ifdSize(exif);pE.bytes=u32(oE);if(pG)pG.bytes=u32(oG);
+  const tiff=[0x4D,0x4D,0,42,0,0,0,8,...writeIfd(ifd0,8),...writeIfd(exif,oE),...(gps.length?writeIfd(gps,oG):[])];
+  const len=2+6+tiff.length;return new Uint8Array([0xFF,0xE1,...u16(len),0x45,0x78,0x69,0x66,0,0,...tiff]);
+}
+async function addExif(blob,m,d){
+  try{const b=new Uint8Array(await blob.arrayBuffer());if(b[0]!==0xFF||b[1]!==0xD8)return blob;
+    let i=2;if(b[2]===0xFF&&b[3]===0xE0)i=4+((b[4]<<8)|b[5]);
+    const app1=buildExif(m,d),out=new Uint8Array(2+app1.length+b.length-i);
+    out.set([0xFF,0xD8]);out.set(app1,2);out.set(b.subarray(i),2+app1.length);return new Blob([out],{type:'image/jpeg'});
+  }catch(e){console.warn('EXIF gagal',e);return blob}
+}
+
+/* ---------- Penyimpanan (IndexedDB) ---------- */
+let dbp=null;
+function db(){return dbp||(dbp=new Promise((res,rej)=>{const r=indexedDB.open('geostamp',1);r.onupgradeneeded=()=>r.result.createObjectStore('photos',{keyPath:'id'});r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}))}
+async function tx(mode,fn){const d=await db();return new Promise((res,rej)=>{const t=d.transaction('photos',mode),r=fn(t.objectStore('photos'));t.oncomplete=()=>res(r&&r.result);t.onerror=()=>rej(t.error);t.onabort=()=>rej(t.error)})}
+const dbPut=r=>tx('readwrite',s=>s.put(r)),dbDel=id=>tx('readwrite',s=>s.delete(id)),dbAll=()=>tx('readonly',s=>s.getAll());
+const blobOf=r=>new Blob([r.buf],{type:'image/jpeg'});
+function updCount(){const n=st.recs.length,b=$('galCount');b.hidden=!n;b.textContent=n}
+
+/* ---------- Kamera ---------- */
+async function startCam(){
+  stopCam();
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){$('noCam').style.display='flex';return}
+  try{
+    st.stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:st.facing},width:{ideal:2560},height:{ideal:1920}}});
+    const v=$('video');v.srcObject=st.stream;v.style.transform=st.facing==='user'?'scaleX(-1)':'';await v.play().catch(()=>{});
+    $('noCam').style.display='none';
+  }catch(e){st.stream=null;$('noCam').style.display='flex';if(e.name==='NotAllowedError')toast('Izin kamera ditolak – memakai kamera bawaan perangkat.')}
+}
+function stopCam(){if(st.stream)st.stream.getTracks().forEach(t=>t.stop());st.stream=null}
+function gate(){
+  const f=form();
+  if(!f.ok){toast('Pilih lokasi penugasan terlebih dahulu');openSheet('shInfo');return false}
+  if(!st.pos&&!confirm('GPS belum terkunci. Ambil foto TANPA koordinat? (Sebaiknya tunggu titik GPS hijau.)'))return false;
+  if(st.pos&&st.pos.acc>30)toast('Akurasi GPS ±'+Math.round(st.pos.acc)+' m – sebaiknya tunggu sampai ≤ 20 m');
+  return true;
+}
+function flash(){const f=$('flash');f.style.opacity=.85;setTimeout(()=>f.style.opacity=0,90)}
+async function capture(){
+  if(!gate())return;
+  if(!st.stream){$('fileCam').click();return}
+  const v=$('video'),W=v.videoWidth,H=v.videoHeight;if(!W){toast('Kamera belum siap');return}
+  const c=document.createElement('canvas');c.width=W;c.height=H;c.getContext('2d').drawImage(v,0,0,W,H);flash();await finish(c);
+}
+async function loadImg(f){
+  try{return await createImageBitmap(f,{imageOrientation:'from-image'})}catch(e){}
+  return new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=URL.createObjectURL(f)});
+}
+$('fileCam').addEventListener('change',async e=>{
+  const f=e.target.files[0];e.target.value='';if(!f)return;
+  try{busy(true,'Memproses foto…');const im=await loadImg(f),w=im.width||im.naturalWidth,h=im.height||im.naturalHeight,k=Math.min(1,4000/Math.max(w,h));
+    const c=document.createElement('canvas');c.width=Math.round(w*k);c.height=Math.round(h*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);await finish(c)}
+  catch(err){toast('Gagal membaca foto');console.error(err)}finally{busy(false)}
+});
+function fileName(m,d){return `KNMP_${m.kode==='UMUM'?'UMUM':m.kode.replace('-','_')}_${slug(m.desa).slice(0,25)||'lokasi'}_${slug(m.jen).slice(0,28)}_${ymd(d).replace(/-/g,'')}_${hms(d).replace(/:/g,'')}.jpg`}
+function thumb(c){const k=240/Math.max(c.width,c.height),t=document.createElement('canvas');t.width=Math.round(c.width*k);t.height=Math.round(c.height*k);t.getContext('2d').drawImage(c,0,0,t.width,t.height);return t.toDataURL('image/jpeg',.7)}
+async function finish(c){
+  $('shutter').disabled=true;
+  try{
+    const d=new Date(),f=form(),p=st.pos;saveForm();
+    const m={id:d.getTime()+'-'+Math.random().toString(36).slice(2,7),time:d.toISOString(),tgl:ymd(d),jam:hms(d),zona:tzOff(d),zonaNama:tzName(d),tglPanjang:fDate(d),
+      kode:f.kode,kab:f.kab,kec:f.kec,desa:f.desa,lokasi:f.lokasi,koord:f.koord,tah:f.tah,jen:f.jen,pet:f.pet,ket:f.ket,lat:p?p.lat:null,lon:p?p.lon:null,acc:p?p.acc:null,alt:p&&p.alt!=null?p.alt:null,gpsTime:p?p.t:null};
+    if(f.map&&p&&(!st.map||dist(st.map,p)>5))await Promise.race([loadTiles(p.lat,p.lon),sleep(3500)]);
+    renderStamp(c.getContext('2d'),c.width,c.height,m,f,st.map);
+    let blob=await new Promise(r=>c.toBlob(r,'image/jpeg',.92));blob=await addExif(blob,m,d);
+    const rec={...m,buf:await blob.arrayBuffer(),thumb:thumb(c),w:c.width,h:c.height,name:fileName(m,d)};
+    try{await dbPut(rec)}catch(e){toast('Penyimpanan penuh/tidak tersedia – segera unduh foto ini.')}
+    st.recs.unshift(rec);updCount();$('fKet').value='';openDetail(rec,true);
+    if(!p)toast('Foto disimpan tanpa koordinat (GPS belum terkunci).');
+  }catch(e){console.error(e);toast('Gagal menyimpan foto: '+e.message)}
+  finally{$('shutter').disabled=false}
+}
+
+/* ---------- Detail, unduh, bagikan ---------- */
+function openSheet(id){$(id).classList.add('open')}
+function closeSheet(id){$(id).classList.remove('open')}
+document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>{const s=b.closest('.sheet');s.classList.remove('open');if(s.id==='shInfo'){saveForm();updPrev();if(st.pos&&$('fMap').checked)onPos()}}));
+const mapsUrl=r=>`https://www.google.com/maps?q=${r.lat},${r.lon}`;
+function openDetail(r,fresh){
+  st.cur=r;$('pvTitle').textContent=fresh?'Foto tersimpan ✓':'Detail foto';
+  if(st.curUrl)URL.revokeObjectURL(st.curUrl);st.curUrl=URL.createObjectURL(blobOf(r));$('prevImg').src=st.curUrl;
+  const rows=[['Lokasi',esc((r.kode&&r.kode!=='UMUM'?r.kode+' · ':'')+r.lokasi)],['Jenis foto',esc(r.jen)],['Tahap',esc(r.tah)],['Waktu',esc(`${r.tglPanjang}, ${r.jam} ${r.zonaNama} (UTC${r.zona})`)]];
+  if(r.lat!=null){rows.push(['Koordinat',`${esc(fCoord(r.lat,r.lon))}<br><span class="muted">${esc(dms(r.lat,'LU','LS')+' '+dms(r.lon,'BT','BB'))}</span>`],
+    ['Akurasi','±'+Math.round(r.acc)+' m'+(r.alt!=null?` • ketinggian ${Math.round(r.alt)} m`:'')],['Peta',`<a href="${mapsUrl(r)}" target="_blank" rel="noopener">Buka di Google Maps ↗</a>`])}
+  else rows.push(['Koordinat','tidak tersedia']);
+  if(r.pet)rows.push(['Surveyor',esc(r.pet)]);if(r.koord)rows.push(['Koordinator',esc(r.koord)]);if(r.ket)rows.push(['Keterangan',esc(r.ket)]);
+  rows.push(['File',esc(`${r.name} • ${r.w}×${r.h} • ${(r.buf.byteLength/1024/1024).toFixed(1)} MB`)]);
+  $('prevKv').innerHTML=rows.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join('');
+  openSheet('shPrev');
+}
+function download(blob,name){const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;a.rel='noopener';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),30000)}
+function caption(r){return ['KNMP 2027 – '+r.jen,(r.kode&&r.kode!=='UMUM'?r.kode+' ':'')+r.lokasi,r.tah,r.pet&&('Surveyor: '+r.pet),`${r.tglPanjang} ${r.jam} ${r.zonaNama}`,r.lat!=null?fCoord(r.lat,r.lon):'',r.ket,r.lat!=null?mapsUrl(r):''].filter(Boolean).join('\n')}
+async function shareRec(r){
+  const file=new File([blobOf(r)],r.name,{type:'image/jpeg'});
+  if(navigator.canShare&&navigator.canShare({files:[file]})){
+    try{await navigator.share({files:[file],title:'KNMP '+(r.desa||''),text:caption(r)})}catch(e){if(e.name!=='AbortError'){toast('Berbagi gagal – mengunduh file.');download(blobOf(r),r.name)}}
+  }else{download(blobOf(r),r.name);toast('Perangkat tidak mendukung berbagi – file diunduh.')}
+}
+$('pvShare').onclick=()=>st.cur&&shareRec(st.cur);
+$('pvDl').onclick=()=>{if(st.cur){download(blobOf(st.cur),st.cur.name);toast('Mengunduh '+st.cur.name)}};
+$('pvDel').onclick=async()=>{if(!st.cur||!confirm('Hapus foto ini dari galeri aplikasi?'))return;await delRecs([st.cur.id]);closeSheet('shPrev')};
+async function delRecs(ids){for(const id of ids){try{await dbDel(id)}catch(e){}}const s=new Set(ids);st.recs=st.recs.filter(r=>!s.has(r.id));ids.forEach(i=>st.sel.delete(i));updCount();renderGal();toast(ids.length+' foto dihapus')}
+
+/* ---------- Galeri ---------- */
+function shown(){const v=$('galF').value;return v?st.recs.filter(r=>r.kode===v):st.recs}
+function renderGal(){
+  const ks=[...new Set(st.recs.map(r=>r.kode))].sort(),cur=$('galF').value;
+  $('galF').innerHTML='<option value="">Semua lokasi</option>'+ks.map(k=>{const r=st.recs.find(x=>x.kode===k);const n=st.recs.filter(x=>x.kode===k).length;return `<option value="${esc(k)}">${esc(k==='UMUM'?'Kegiatan umum':k+' · '+r.desa)} (${n})</option>`}).join('');
+  if(ks.includes(cur))$('galF').value=cur;
+  const list=shown(),g=$('grid');g.innerHTML='';$('galN').textContent=list.length;$('galEmpty').hidden=list.length>0;
+  for(const r of list){
+    const it=document.createElement('div');it.className='it'+(st.sel.has(r.id)?' sel':'');
+    const im=document.createElement('img');im.src=r.thumb;im.alt='';im.loading='lazy';
+    const sp=document.createElement('span');sp.textContent=(r.desa||'—')+' · '+r.jen+' · '+r.tgl.slice(5).split('-').reverse().join('/')+' '+r.jam.slice(0,5);
+    it.append(im,sp);
+    it.onclick=()=>{if(st.selMode){st.sel.has(r.id)?st.sel.delete(r.id):st.sel.add(r.id);it.classList.toggle('sel');updSel()}else openDetail(r)};
+    g.appendChild(it);
+  }
+  updSel();
+}
+function updSel(){$('selBtn').textContent=st.selMode?`Selesai (${st.sel.size})`:'Pilih';$('exDel').hidden=!st.sel.size;
+  $('exInfo').textContent=st.sel.size?`Ekspor ${st.sel.size} foto terpilih`:`Ekspor ${shown().length} foto (${$('galF').value?'lokasi ini':'semua lokasi'})`}
+$('galF').onchange=()=>{st.sel.clear();renderGal()};
+const targets=()=>{const t=st.sel.size?st.recs.filter(r=>st.sel.has(r.id)):shown().slice();return t.sort((a,b)=>a.time<b.time?-1:1)};
+$('selBtn').onclick=()=>{st.selMode=!st.selMode;if(!st.selMode){st.sel.clear()}renderGal()};
+$('exDel').onclick=()=>{if(st.sel.size&&confirm(`Hapus ${st.sel.size} foto terpilih?`))delRecs([...st.sel])};
+$('galBtn').onclick=()=>{renderGal();openSheet('shGal')};
+
+/* ---------- Ekspor ---------- */
+const stamp=()=>{const d=new Date();return ymd(d).replace(/-/g,'')+'_'+hms(d).replace(/:/g,'')};
+function expTag(t){const k=[...new Set(t.map(r=>r.kode))];return k.length===1?lokFolder(t[0]).replace(/^KNMP_/,''):'multi_lokasi'}
+function need(){const t=targets();if(!t.length){toast('Belum ada foto untuk diekspor');return null}return t}
+const COLS=[['No',(r,i)=>i+1],['Kode lokasi',r=>r.kode],['Kabupaten/Kota',r=>r.kab],['Kecamatan',r=>r.kec],['Desa/Kelurahan',r=>r.desa],['Tahap kegiatan',r=>r.tah],['Jenis foto',r=>r.jen],
+  ['Keterangan',r=>r.ket],['Tanggal',r=>r.tgl],['Jam',r=>r.jam],['Zona waktu',r=>`${r.zonaNama} (UTC${r.zona})`],['Latitude',r=>r.lat!=null?r.lat.toFixed(7):''],['Longitude',r=>r.lon!=null?r.lon.toFixed(7):''],
+  ['Akurasi (m)',r=>r.acc!=null?Math.round(r.acc):''],['Ketinggian (m)',r=>r.alt!=null?Math.round(r.alt):''],['Surveyor',r=>r.pet],['Koordinator wilayah',r=>r.koord],['Nama file',r=>r.name],['Folder di ZIP',r=>zipPath(r)],['Google Maps',r=>r.lat!=null?mapsUrl(r):'']];
+const lokFolder=r=>r.kode==='UMUM'?'KNMP_UMUM_'+(slug(r.desa).slice(0,30)||'kegiatan'):`KNMP_${r.kode.replace('-','_')}_${slug(r.desa)}`;
+const zipPath=r=>`${lokFolder(r)}/${slug(r.jen)}/`;
+function csvText(list){const q=v=>`"${String(v??'').replace(/"/g,'""')}"`;return '﻿'+[COLS.map(c=>q(c[0])).join(';'),...list.map((r,i)=>COLS.map(c=>q(c[1](r,i))).join(';'))].join('\r\n')}
+function kmlText(list){const x=s=>String(s??'').replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
+  const pm=list.filter(r=>r.lat!=null).map(r=>`<Placemark><name>${x((r.kode||'')+' '+r.desa+' – '+r.jen)}</name><description><![CDATA[${caption(r).replace(/\n/g,'<br>').replace(/]]>/g,'')}<br>File: ${r.name}]]></description><TimeStamp><when>${r.time}</when></TimeStamp><Point><coordinates>${r.lon},${r.lat}${r.alt!=null?','+r.alt.toFixed(1):''}</coordinates></Point></Placemark>`).join('\n');
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>KNMP 2027 – Dokumentasi ${stamp()}</name>\n${pm}\n</Document></kml>`}
+function jsonText(list){return JSON.stringify(list.map(({buf,thumb,...r})=>r),null,2)}
+$('exCsv').onclick=()=>{const t=need();if(t){download(new Blob([csvText(t)],{type:'text/csv;charset=utf-8'}),`KNMP_rekap_${expTag(t)}_${stamp()}.csv`)}};
+$('exKml').onclick=()=>{const t=need();if(!t)return;if(!t.some(r=>r.lat!=null))return toast('Tidak ada foto dengan koordinat');download(new Blob([kmlText(t)],{type:'application/vnd.google-earth.kml+xml'}),`KNMP_titik_${expTag(t)}_${stamp()}.kml`)};
+$('exJson').onclick=()=>{const t=need();if(t)download(new Blob([jsonText(t)],{type:'application/json'}),`KNMP_data_${expTag(t)}_${stamp()}.json`)};
+
+const CRC=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+function crc32(b){let c=0xFFFFFFFF;for(let i=0;i<b.length;i++)c=CRC[(c^b[i])&255]^(c>>>8);return(c^0xFFFFFFFF)>>>0}
+function zip(files){
+  const te=new TextEncoder(),parts=[],cd=[];let off=0;
+  for(const f of files){
+    const nm=te.encode(f.name),d=f.date||new Date(),data=f.data,crc=crc32(data);
+    const time=(d.getHours()<<11)|(d.getMinutes()<<5)|(d.getSeconds()>>1),date=((d.getFullYear()-1980)<<9)|((d.getMonth()+1)<<5)|d.getDate();
+    const h=new DataView(new ArrayBuffer(30));h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint16(6,0x0800,true);h.setUint16(10,time,true);h.setUint16(12,date,true);
+    h.setUint32(14,crc,true);h.setUint32(18,data.length,true);h.setUint32(22,data.length,true);h.setUint16(26,nm.length,true);parts.push(h,nm,data);
+    const c=new DataView(new ArrayBuffer(46));c.setUint32(0,0x02014b50,true);c.setUint16(4,20,true);c.setUint16(6,20,true);c.setUint16(8,0x0800,true);c.setUint16(12,time,true);c.setUint16(14,date,true);
+    c.setUint32(16,crc,true);c.setUint32(20,data.length,true);c.setUint32(24,data.length,true);c.setUint16(28,nm.length,true);c.setUint32(42,off,true);cd.push(c,nm);
+    off+=30+nm.length+data.length;
+  }
+  const cds=cd.reduce((s,x)=>s+x.byteLength,0),e=new DataView(new ArrayBuffer(22));
+  e.setUint32(0,0x06054b50,true);e.setUint16(8,files.length,true);e.setUint16(10,files.length,true);e.setUint32(12,cds,true);e.setUint32(16,off,true);
+  return new Blob([...parts,...cd,e],{type:'application/zip'});
+}
+$('exZip').onclick=async()=>{
+  const t=need();if(!t)return;busy(true,'Membuat ZIP…');await sleep(30);
+  try{const te=new TextEncoder(),used=new Set(),files=t.map(r=>{let n=zipPath(r)+r.name,i=2;while(used.has(n))n=zipPath(r)+r.name.replace(/\.jpg$/,`_${i++}.jpg`);used.add(n);return{name:n,data:new Uint8Array(r.buf),date:new Date(r.time)}});
+    files.push({name:'rekap_foto.csv',data:te.encode(csvText(t))},{name:'titik_foto.kml',data:te.encode(kmlText(t))},{name:'data.json',data:te.encode(jsonText(t))});
+    download(zip(files),`KNMP_${expTag(t)}_${stamp()}.zip`);toast('ZIP berisi '+t.length+' foto diunduh')}
+  catch(e){toast('Gagal membuat ZIP: '+e.message)}finally{busy(false)}
+};
+async function smallDataUrl(r,max){const im=await loadImg(blobOf(r)),w=im.width||im.naturalWidth,h=im.height||im.naturalHeight,k=Math.min(1,max/Math.max(w,h));
+  const c=document.createElement('canvas');c.width=Math.round(w*k);c.height=Math.round(h*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);return c.toDataURL('image/jpeg',.82)}
+$('exRep').onclick=async()=>{
+  const t=need();if(!t)return;busy(true,'Menyusun laporan…');
+  try{
+    const items=[];for(const r of t)items.push({r,src:await smallDataUrl(r,1400)});
+    const groups=[...new Set(t.map(r=>r.kode))];
+    const rng=t[0].tgl===t[t.length-1].tgl?t[0].tglPanjang:`${t[0].tglPanjang} – ${t[t.length-1].tglPanjang}`;
+    let no=0;
+    const body=groups.map(k=>{const g=items.filter(x=>x.r.kode===k),r0=g[0].r,svs=[...new Set(g.map(x=>x.r.pet).filter(Boolean))].join(', ');
+      return `<h2>${esc(k==='UMUM'?r0.lokasi:k+' · '+r0.lokasi)}</h2><p class="sub">Surveyor: ${esc(svs||'—')}${r0.koord?' • Koordinator wilayah: '+esc(r0.koord):''} • ${g.length} foto</p>`+
+      g.map(({r,src})=>`<section class="card"><img src="${src}"><table>
+<tr><th>No</th><td>${++no}</td></tr><tr><th>Jenis foto</th><td>${esc(r.jen)}</td></tr><tr><th>Tahap</th><td>${esc(r.tah)}</td></tr>
+<tr><th>Waktu</th><td>${esc(r.tglPanjang+', '+r.jam+' '+r.zonaNama)}</td></tr>
+<tr><th>Koordinat</th><td>${r.lat!=null?`${esc(fCoord(r.lat,r.lon))} (±${Math.round(r.acc)} m) – <a href="${mapsUrl(r)}">peta</a>`:'—'}</td></tr>
+${r.ket?`<tr><th>Keterangan</th><td>${esc(r.ket)}</td></tr>`:''}<tr><th>Surveyor</th><td>${esc(r.pet||'—')}</td></tr>
+<tr><th>File</th><td>${esc(r.name)}</td></tr></table></section>`).join('\n')}).join('\n');
+    const html=`<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Dokumentasi Survei KNMP 2027</title>
+<style>body{font:14px/1.45 system-ui,sans-serif;color:#111;max-width:900px;margin:0 auto;padding:20px}h1{font-size:20px;margin:0 0 4px}h2{font-size:17px;margin:26px 0 2px;padding-top:10px;border-top:2px solid #333}.sub{color:#555;margin:0 0 14px}
+.card{border:1px solid #ccc;border-radius:8px;padding:10px;margin:0 0 16px;break-inside:avoid;page-break-inside:avoid}.card img{width:100%;border-radius:6px;display:block;margin-bottom:8px}
+table{border-collapse:collapse;width:100%}th{text-align:left;width:110px;color:#555;font-weight:600;vertical-align:top;padding:2px 8px 2px 0}td{padding:2px 0}
+.bar{position:sticky;top:0;background:#fff;padding:8px 0;margin-bottom:10px;border-bottom:1px solid #eee}button{font:inherit;padding:8px 14px;border-radius:8px;border:1px solid #888;background:#f4f4f4}
+@media print{.bar{display:none}body{padding:0}h2{break-before:page}h2:first-of-type{break-before:auto}}</style></head><body>
+<div class="bar"><button onclick="print()">🖨 Cetak / Simpan sebagai PDF</button></div>
+<h1>Dokumentasi Survei, Verifikasi, Penilaian, dan Fasilitasi Kesiapan Calon Lokasi KNMP 2027</h1><p class="sub">Mitra FPIK Universitas Sam Ratulangi • ${esc(rng)} • ${t.length} foto • ${groups.length} lokasi</p>
+${body}</body></html>`;
+    download(new Blob([html],{type:'text/html;charset=utf-8'}),`KNMP_laporan_${expTag(t)}_${stamp()}.html`);
+    toast('Laporan diunduh – buka file, lalu Cetak → Simpan sebagai PDF');
+  }catch(e){toast('Gagal membuat laporan: '+e.message)}finally{busy(false)}
+};
+
+/* ---------- Mulai ---------- */
+$('actChip').onclick=()=>openSheet('shInfo');
+$('gpsChip').onclick=()=>{if(st.pos)toast(`${fCoord(st.pos.lat,st.pos.lon)} • akurasi ±${Math.round(st.pos.acc)} m`);else toast('Menunggu sinyal GPS… lebih cepat di ruang terbuka.')};
+$('shutter').onclick=capture;
+$('flipBtn').onclick=()=>{if(st.native){if(gate())$('fileCam').click();return}st.facing=st.facing==='environment'?'user':'environment';startCam()};
+['fPet','fKet','fDesa','fWil','qTah','qJen','fMap','fSize','fPos'].forEach(id=>$(id).addEventListener('input',()=>{saveForm();lokUi();updPrev()}));
+['qTah','qJen'].forEach(id=>$(id).addEventListener('change',()=>{saveForm();updPrev()}));
+$('fLok').addEventListener('change',()=>{const m=lokMeta();if(m.sv)$('fPet').value=m.sv;saveForm();lokUi();updPrev()});
+function begin(native){
+  $('start').style.display='none';LS.set('started',native?'native':'cam');st.native=native;
+  startGeo();if(native){$('noCam').style.display='flex'}else startCam();
+  if(!lokMeta().ok)setTimeout(()=>openSheet('shInfo'),400);
+  try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
+}
+$('startBtn').onclick=()=>begin(false);
+$('startNative').onclick=()=>begin(true);
+document.addEventListener('visibilitychange',()=>{if(document.hidden)stopCam();else if(!st.native&&$('start').style.display==='none')startCam()});
+(async function init(){
+  if(!window.isSecureContext)$('httpsWarn').hidden=false;
+  loadForm();updPrev();drawMapPrev();setInterval(updPrev,1000);
+  try{st.recs=(await dbAll()).sort((a,b)=>a.time<b.time?1:-1);updCount()}catch(e){console.warn('IndexedDB tidak tersedia',e)}
+  const s=LS.get('started',null);if(s)begin(s==='native');
+  if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
+})();
+</script>
+</body>
+</html>
