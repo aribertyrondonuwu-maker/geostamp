@@ -217,8 +217,13 @@ const TIM=[{id:'SV',role:'Surveyor',name:''},...Object.keys(KAB).map(k=>({id:'KW
  {id:'MP',role:'Manajer Program',name:'Dr. Ir. Ockstan Jurike Kalesaran, M.Sc'},{id:'TL',role:'Team Leader',name:'Heffry Veibert Dien, S.Pi, M.Si, Ph.D'},
  {id:'AL',role:'Administrasi Laporan',name:'Ir. Arman Thamin'},{id:'AK',role:'Administrasi Keuangan',name:'Poula Jacqeline Bawole, S.AP'},{id:'AF',role:'Administrasi Lapangan',name:'Irene Presilia Lumintang'}];
 const timOf=()=>TIM.find(t=>t.id===$('fPer').value)||TIM[0];
-const TAHAP=['Pemeriksaan kondisi aktual lokasi','Pertemuan dengan perangkat desa/kelurahan','Verifikasi dan penilaian lokasi','FGD tingkat desa/kab/kota','Fasilitasi kesiapan lokasi','Verifikasi pemenuhan SMK','Pemaparan hasil kerja mitra','Koordinasi dengan Pemda','Mobilisasi / perjalanan tim','Pembekalan dan standardisasi','Lainnya'];
-const JENIS=['Kondisi fisik eksisting','Batas lahan','Status/dokumen lahan','Sarana dan prasarana','Aksesibilitas (jalan/dermaga)','Aktivitas perikanan','Kelompok usaha/koperasi','Wawancara informan kunci','FGD','Koordinasi Pemda/desa','Dokumen pendukung','Daftar hadir','Foto bersama tim','Lainnya'];
+const TAHAP=['Pemeriksaan kondisi aktual lokasi','Pertemuan dengan perangkat desa/kelurahan','Verifikasi dan penilaian lokasi','FGD tingkat desa/kab/kota','Fasilitasi kesiapan lokasi','Verifikasi pemenuhan SMK','Pemaparan hasil kerja mitra','Koordinasi dengan Pemda','Mobilisasi / perjalanan tim','Logistik dan operasional','Pembekalan dan standardisasi','Lainnya'];
+const JENIS_G={'Survei dan penilaian':['Kondisi fisik eksisting','Batas lahan','Status/dokumen lahan','Sarana dan prasarana','Aksesibilitas (jalan/dermaga)','Aktivitas perikanan','Kelompok usaha/koperasi','Dokumen pendukung'],
+ 'Pertemuan dan koordinasi':['Wawancara informan kunci','FGD','Koordinasi Pemda/desa','Daftar hadir','Foto bersama tim'],
+ 'Logistik dan keuangan':['BBM / bahan bakar','Konsumsi / makan-minum','Penginapan','Transportasi (sewa kendaraan/perahu)','Perjalanan / mobilisasi','Nota / kuitansi'],
+ 'Lainnya':['Lainnya']};
+const JENIS=Object.values(JENIS_G).flat();
+const LOGI=JENIS_G['Logistik dan keuangan'];
 const slug=s=>String(s||'').replace(/[\/&]/g,' ').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^\w\s-]/g,'').trim().replace(/[\s-]+/g,'_');
 function lokMeta(){
   const v=$('fLok').value;
@@ -233,7 +238,7 @@ function fillSelects(){
   for(const k of Object.keys(KAB)){h+=`<optgroup label="${KAB[k]}">`+LOK.filter(l=>l.kab===k).map(l=>l.level?`<option value="${l.id}">00 · Tingkat ${l.desa} (Pemda, FGD kab/kota)</option>`:`<option value="${l.id}">${l.id} · ${l.desa} (${l.kec})</option>`).join('')+'</optgroup>'}
   h+='<option value="X">Lainnya – kegiatan di luar 32 lokasi</option>';$('fLok').innerHTML=h;
   $('fPer').innerHTML=TIM.map(t=>`<option value="${t.id}">${t.id==='SV'?'Surveyor lokasi':t.role+(t.kab?' – '+KABS[t.kab]:'')}${t.name?' ('+t.name+')':''}</option>`).join('');
-  $('qTah').innerHTML=TAHAP.map(t=>`<option>${t}</option>`).join('');$('qJen').innerHTML=JENIS.map(t=>`<option>${t}</option>`).join('');
+  $('qTah').innerHTML=TAHAP.map(t=>`<option>${t}</option>`).join('');$('qJen').innerHTML=Object.entries(JENIS_G).map(([g,a])=>`<optgroup label="${g}">`+a.map(t=>`<option>${t}</option>`).join('')+'</optgroup>').join('');
 }
 function loadForm(){fillSelects();$('fPer').value=LS.get('per','SV');if(!$('fPer').value)$('fPer').value='SV';$('fLok').value=LS.get('lok','');$('fDesa').value=LS.get('desa','');$('fWil').value=LS.get('wil','');$('fPet').value=LS.get('pet','');$('fKet').value='';
   $('qTah').value=LS.get('tah',TAHAP[0]);if(!$('qTah').value)$('qTah').value=TAHAP[0];$('qJen').value=LS.get('jen',JENIS[0]);if(!$('qJen').value)$('qJen').value=JENIS[0];
@@ -572,6 +577,7 @@ $('shutter').onclick=capture;
 $('flipBtn').onclick=()=>{if(st.native){if(gate())$('fileCam').click();return}st.facing=st.facing==='environment'?'user':'environment';startCam()};
 ['fPet','fKet','fDesa','fWil','qTah','qJen','fMap','fSize','fPos'].forEach(id=>$(id).addEventListener('input',()=>{saveForm();lokUi();updPrev()}));
 ['qTah','qJen'].forEach(id=>$(id).addEventListener('change',()=>{saveForm();updPrev()}));
+$('qJen').addEventListener('change',()=>{const j=$('qJen').value;if(LOGI.includes(j)){if(j==='Perjalanan / mobilisasi')$('qTah').value='Mobilisasi / perjalanan tim';else if(!['Mobilisasi / perjalanan tim','Logistik dan operasional'].includes($('qTah').value))$('qTah').value='Logistik dan operasional';saveForm();updPrev();if(j==='Nota / kuitansi')toast('Tips: foto nota di permukaan datar, terang, seluruh teks terbaca.')}});
 $('fLok').addEventListener('change',()=>{autoName();saveForm();lokUi();updPrev()});
 $('fPer').addEventListener('change',()=>{const t=timOf(),m=lokMeta();if(t.kab&&(!m.ok||!m.kab||m.kab!==KAB[t.kab]))$('fLok').value='K'+t.kab;autoName();saveForm();lokUi();updPrev()});
 function begin(native){

@@ -36,6 +36,11 @@ Daftar 32 lokasi, surveyor, dan koordinator wilayah diambil dari Tabel 1 dan Tab
 3. Foto tingkat kabupaten tersimpan di folder `KNMP_00_<KAB>_...` di dalam ZIP.
 4. Koordinator bisa memakai **Galeri → filter lokasi** untuk memeriksa dan mengekspor foto per desa.
 
+## Foto logistik (BBM, makan, penginapan, transportasi)
+Pilih **Jenis foto → grup "Logistik dan keuangan"**. Pilihannya: BBM / bahan bakar, Konsumsi / makan-minum, Penginapan, Transportasi (sewa kendaraan/perahu), Perjalanan / mobilisasi, atau Nota / kuitansi. Tahap kegiatan otomatis berubah menjadi *Logistik dan operasional*.
+Tulis rinciannya di **Keterangan**, misalnya "Pertalite 30 liter kendaraan tim, SPBU Molibagu". Foto juga **notanya** dengan jenis *Nota / kuitansi*. Pilih lokasi tempat Anda bertugas saat itu, atau 00 · Tingkat Kab/Kota.
+Dalam ZIP, foto-foto ini tersimpan di folder `BBM_bahan_bakar`, `Konsumsi_makan_minum`, `Nota_kuitansi`, dan seterusnya, sehingga mudah diserahkan ke Administrasi Keuangan.
+
 ## Hasil ekspor
 - **ZIP** dengan struktur `KNMP_07_BMS_Dudepo_Barat/Batas_lahan/KNMP_07_BMS_Dudepo_Barat_Batas_lahan_20261110_093015.jpg`. Di dalamnya juga ada `rekap_foto.csv`, `titik_foto.kml`, dan `data.json`.
 - **Laporan**: halaman HTML berisi foto, dikelompokkan per lokasi. Buka → Cetak → Simpan sebagai PDF.
