@@ -30,6 +30,12 @@ Daftar 32 lokasi, surveyor, dan koordinator wilayah diambil dari Tabel 1 dan Tab
 5. Simpan foto ke galeri HP lewat **Bagikan → Simpan Gambar**, agar bisa dilampirkan di pertanyaan foto KoBoCollect.
 6. Di akhir hari, buka **Galeri**, pilih lokasi, lalu tekan **ZIP**. Unggah file ZIP ke penyimpanan daring bersama tim.
 
+## Untuk koordinator wilayah dan tim pelaksana
+1. Ketuk **✎**, lalu pada **Peran pengambil foto** pilih nama Anda (Koordinator Wilayah, Manajer Program, Team Leader, atau Administrasi).
+2. Untuk koordinator, lokasi otomatis diatur ke **00 · Tingkat Kabupaten/Kota**, yang dipakai untuk koordinasi Pemda, FGD tingkat kabupaten/kota, dan kegiatan lintas desa. Saat mendampingi di desa tertentu, pilih desa tersebut. Nama Anda tetap tercatat sebagai pengambil foto.
+3. Foto tingkat kabupaten tersimpan di folder `KNMP_00_<KAB>_...` di dalam ZIP.
+4. Koordinator bisa memakai **Galeri → filter lokasi** untuk memeriksa dan mengekspor foto per desa.
+
 ## Hasil ekspor
 - **ZIP** dengan struktur `KNMP_07_BMS_Dudepo_Barat/Batas_lahan/KNMP_07_BMS_Dudepo_Barat_Batas_lahan_20261110_093015.jpg`. Di dalamnya juga ada `rekap_foto.csv`, `titik_foto.kml`, dan `data.json`.
 - **Laporan**: halaman HTML berisi foto, dikelompokkan per lokasi. Buka → Cetak → Simpan sebagai PDF.

@@ -109,7 +109,7 @@ textarea{min-height:70px;resize:vertical}
 
 <!-- Informasi kegiatan -->
 <div class="sheet" id="shInfo">
-  <div class="hd"><h2>Lokasi &amp; surveyor</h2><button class="btn sm" data-close>Tutup</button></div>
+  <div class="hd"><h2>Lokasi &amp; pengambil foto</h2><button class="btn sm" data-close>Tutup</button></div>
   <div class="bd">
     <label for="fLok">Lokasi penugasan</label>
     <select id="fLok"></select>
@@ -120,8 +120,10 @@ textarea{min-height:70px;resize:vertical}
       <label for="fWil">Kota / kabupaten</label>
       <input id="fWil" placeholder="mis. Kota Manado">
     </div>
-    <label for="fPet">Nama surveyor / pengambil foto</label>
-    <input id="fPet" placeholder="Terisi otomatis sesuai penugasan">
+    <label for="fPer">Peran pengambil foto</label>
+    <select id="fPer"></select>
+    <label for="fPet">Nama pengambil foto</label>
+    <input id="fPet" placeholder="Terisi otomatis sesuai peran dan lokasi">
     <label for="fKet">Keterangan foto (opsional)</label>
     <textarea id="fKet" placeholder="mis. Batas lahan sisi utara, berbatasan dengan jalan desa"></textarea>
     <p class="muted">Tahap kegiatan dan jenis foto dipilih langsung di layar kamera. Keterangan dikosongkan otomatis setelah setiap foto.</p>
@@ -210,28 +212,36 @@ const LOK=[
  [28,'MNH','Mandolang','Tateli','Rein Bawole'],[29,'MNH','Mandolang','Tateli Dua','Jeremia Watung, S.Pi'],[30,'MNH','Mandolang','Tateli Weru','Ir. Arnold Tulandi'],
  [31,'MNH','Tombariri','Poopoh','Ir. Reiny Daipaha'],[32,'MNH','Tombariri','Tambala','Suprian Abdurahman, S.Kel']
 ].map(([no,kab,kec,desa,sv])=>({id:p2(no),kode:p2(no)+'-'+kab,kab,kec,desa,sv,pre:kab==='BTG'?'Kel.':'Desa'}));
+for(const k of Object.keys(KAB))LOK.push({id:'K'+k,kode:'00-'+k,kab:k,kec:'',desa:KABS[k],sv:'',level:true});
+const TIM=[{id:'SV',role:'Surveyor',name:''},...Object.keys(KAB).map(k=>({id:'KW-'+k,role:'Koordinator Wilayah',name:KOORD[k],kab:k})),
+ {id:'MP',role:'Manajer Program',name:'Dr. Ir. Ockstan Jurike Kalesaran, M.Sc'},{id:'TL',role:'Team Leader',name:'Heffry Veibert Dien, S.Pi, M.Si, Ph.D'},
+ {id:'AL',role:'Administrasi Laporan',name:'Ir. Arman Thamin'},{id:'AK',role:'Administrasi Keuangan',name:'Poula Jacqeline Bawole, S.AP'},{id:'AF',role:'Administrasi Lapangan',name:'Irene Presilia Lumintang'}];
+const timOf=()=>TIM.find(t=>t.id===$('fPer').value)||TIM[0];
 const TAHAP=['Pemeriksaan kondisi aktual lokasi','Pertemuan dengan perangkat desa/kelurahan','Verifikasi dan penilaian lokasi','FGD tingkat desa/kab/kota','Fasilitasi kesiapan lokasi','Verifikasi pemenuhan SMK','Pemaparan hasil kerja mitra','Koordinasi dengan Pemda','Mobilisasi / perjalanan tim','Pembekalan dan standardisasi','Lainnya'];
 const JENIS=['Kondisi fisik eksisting','Batas lahan','Status/dokumen lahan','Sarana dan prasarana','Aksesibilitas (jalan/dermaga)','Aktivitas perikanan','Kelompok usaha/koperasi','Wawancara informan kunci','FGD','Koordinasi Pemda/desa','Dokumen pendukung','Daftar hadir','Foto bersama tim','Lainnya'];
-const slug=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^\w\s-]/g,'').trim().replace(/[\s-]+/g,'_');
+const slug=s=>String(s||'').replace(/[\/&]/g,' ').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^\w\s-]/g,'').trim().replace(/[\s-]+/g,'_');
 function lokMeta(){
   const v=$('fLok').value;
   if(v==='X'){const n=$('fDesa').value.trim(),w=$('fWil').value.trim();return{kode:'UMUM',kab:'',kec:'',desa:n,koord:'',lokasi:[n,w].filter(Boolean).join(', '),ok:!!n}}
   const L=LOK.find(l=>l.id===v);if(!L)return{kode:'',ok:false,lokasi:''};
+  if(L.level)return{kode:L.kode,kab:KAB[L.kab],kec:'',desa:KABS[L.kab],koord:KOORD[L.kab],sv:'',lokasi:KAB[L.kab]+' (tingkat kabupaten/kota)',ok:true,level:true};
   return{kode:L.kode,kab:KAB[L.kab],kec:L.kec,desa:L.desa,koord:KOORD[L.kab],sv:L.sv,lokasi:`${L.pre} ${L.desa}, Kec. ${L.kec}, ${KABS[L.kab]}`,ok:true};
 }
-function form(){return{...lokMeta(),lok:$('fLok').value,pet:$('fPet').value.trim(),ket:$('fKet').value.trim(),tah:$('qTah').value,jen:$('qJen').value,map:$('fMap').checked,size:parseFloat($('fSize').value)||1,pos:$('fPos').value}}
+function form(){return{...lokMeta(),lok:$('fLok').value,peran:timOf().role,pet:$('fPet').value.trim(),ket:$('fKet').value.trim(),tah:$('qTah').value,jen:$('qJen').value,map:$('fMap').checked,size:parseFloat($('fSize').value)||1,pos:$('fPos').value}}
 function fillSelects(){
   let h='<option value="">— pilih lokasi penugasan —</option>';
-  for(const k of Object.keys(KAB)){h+=`<optgroup label="${KAB[k]}">`+LOK.filter(l=>l.kab===k).map(l=>`<option value="${l.id}">${l.id} · ${l.desa} (${l.kec})</option>`).join('')+'</optgroup>'}
+  for(const k of Object.keys(KAB)){h+=`<optgroup label="${KAB[k]}">`+LOK.filter(l=>l.kab===k).map(l=>l.level?`<option value="${l.id}">00 · Tingkat ${l.desa} (Pemda, FGD kab/kota)</option>`:`<option value="${l.id}">${l.id} · ${l.desa} (${l.kec})</option>`).join('')+'</optgroup>'}
   h+='<option value="X">Lainnya – kegiatan di luar 32 lokasi</option>';$('fLok').innerHTML=h;
+  $('fPer').innerHTML=TIM.map(t=>`<option value="${t.id}">${t.id==='SV'?'Surveyor lokasi':t.role+(t.kab?' – '+KABS[t.kab]:'')}${t.name?' ('+t.name+')':''}</option>`).join('');
   $('qTah').innerHTML=TAHAP.map(t=>`<option>${t}</option>`).join('');$('qJen').innerHTML=JENIS.map(t=>`<option>${t}</option>`).join('');
 }
-function loadForm(){fillSelects();$('fLok').value=LS.get('lok','');$('fDesa').value=LS.get('desa','');$('fWil').value=LS.get('wil','');$('fPet').value=LS.get('pet','');$('fKet').value='';
+function loadForm(){fillSelects();$('fPer').value=LS.get('per','SV');if(!$('fPer').value)$('fPer').value='SV';$('fLok').value=LS.get('lok','');$('fDesa').value=LS.get('desa','');$('fWil').value=LS.get('wil','');$('fPet').value=LS.get('pet','');$('fKet').value='';
   $('qTah').value=LS.get('tah',TAHAP[0]);if(!$('qTah').value)$('qTah').value=TAHAP[0];$('qJen').value=LS.get('jen',JENIS[0]);if(!$('qJen').value)$('qJen').value=JENIS[0];
   $('fMap').checked=LS.get('map',true);$('fSize').value=LS.get('size','1');$('fPos').value=LS.get('pos','bottom');lokUi()}
-function saveForm(){const f=form();LS.set('lok',f.lok);LS.set('desa',$('fDesa').value);LS.set('wil',$('fWil').value);LS.set('pet',f.pet);LS.set('tah',f.tah);LS.set('jen',f.jen);LS.set('map',f.map);LS.set('size',$('fSize').value);LS.set('pos',f.pos)}
+function saveForm(){const f=form();LS.set('per',$('fPer').value);LS.set('lok',f.lok);LS.set('desa',$('fDesa').value);LS.set('wil',$('fWil').value);LS.set('pet',f.pet);LS.set('tah',f.tah);LS.set('jen',f.jen);LS.set('map',f.map);LS.set('size',$('fSize').value);LS.set('pos',f.pos)}
 function lokUi(){const m=lokMeta(),x=$('fLok').value==='X';$('lokManual').hidden=!x;const i=$('lokInfo');
-  if(m.ok&&!x){i.hidden=false;i.innerHTML=`<b>${esc(m.kode)}</b> · ${esc(m.lokasi)}<br>Surveyor: ${esc(m.sv)}<br>Koordinator wilayah: ${esc(m.koord)}`}else i.hidden=true}
+  if(m.ok&&!x){i.hidden=false;i.innerHTML=`<b>${esc(m.kode)}</b> · ${esc(m.lokasi)}<br>${m.level?'Untuk koordinasi Pemda, FGD tingkat kab/kota, dan kegiatan lintas desa':'Surveyor: '+esc(m.sv)}<br>Koordinator wilayah: ${esc(m.koord)}`}else i.hidden=true}
+function autoName(){const t=timOf();if(t.id==='SV'){const m=lokMeta();if(m.sv)$('fPet').value=m.sv}else $('fPet').value=t.name}
 function addKegHist(){}
 /* ---------- GPS ---------- */
 function setGps(c,t){$('gpsDot').style.background=c==='ok'?'var(--acc)':c==='mid'?'var(--warn)':'var(--bad)';$('gpsTxt').textContent=t}
@@ -283,7 +293,7 @@ function stampLines(m){
   if(m.lat!=null){let t=`${fCoord(m.lat,m.lon)}  (±${Math.round(m.acc)} m`;if(m.alt!=null)t+=` • alt ${Math.round(m.alt)} m`;L.push({t:t+')',s:1})}
   else L.push({t:'Koordinat GPS tidak tersedia',s:1});
   L.push({t:'Survei KNMP 2027 • '+(m.tah||''),s:.92,wrap:2});
-  L.push({t:[m.pet&&('Surveyor: '+m.pet),'FPIK UNSRAT'].filter(Boolean).join('  •  '),s:.92,wrap:2});
+  L.push({t:[m.pet&&((m.peran||'Surveyor')+': '+m.pet),'FPIK UNSRAT'].filter(Boolean).join('  •  '),s:.92,wrap:2});
   if(m.ket)L.push({t:m.ket,s:.92,wrap:3,it:true});
   return L;
 }
@@ -316,7 +326,7 @@ function updPrev(){
   lines.push('<b>'+esc(f.jen)+'</b>'+(f.ok?' — '+esc(f.desa):''));
   lines.push(esc(fDate(d)+' • '+fTime(d)));
   lines.push(p?esc(fCoord(p.lat,p.lon)+' (±'+Math.round(p.acc)+' m)'):'Mencari GPS…');
-  lines.push(esc(f.tah)+(f.pet?' • '+esc(f.pet):''));
+  lines.push(esc(f.tah)+(f.pet?' • '+esc(f.peran)+': '+esc(f.pet):''));
   $('stampTxt').innerHTML=lines.join('<br>');
   $('mapPrev').style.display=f.map?'':'none';
   $('stampPrev').style.top=f.pos==='top'?'8px':'';$('stampPrev').style.bottom=f.pos==='top'?'':'8px';
@@ -342,7 +352,7 @@ function buildExif(m,d){
   const desc=['KNMP 2027',m.kode,m.jen,m.lokasi,m.ket].filter(Boolean).join(' | ');
   const ifd0=[EA(0x010E,desc),EA(0x0131,'GeoStamp'),EA(0x0132,dt)];if(m.pet)ifd0.push(EA(0x013B,m.pet));
   const exif=[EA(0x9003,dt),EA(0x9004,dt),EA(0x9010,m.zona),EA(0x9011,m.zona)];
-  const comment=['KNMP 2027',m.kode,m.lokasi,m.tah,m.jen,m.pet&&('Surveyor: '+m.pet),m.ket].filter(Boolean).join(' | ');
+  const comment=['KNMP 2027',m.kode,m.lokasi,m.tah,m.jen,m.pet&&((m.peran||'Surveyor')+': '+m.pet),m.ket].filter(Boolean).join(' | ');
   if(comment){const b=[...asc('ASCII').slice(0,5),0,0,0,...asc(comment).slice(0,-1)];exif.push(E(0x9286,7,b.length,b))}
   const gps=[];
   if(m.lat!=null){
@@ -415,7 +425,7 @@ async function finish(c){
   try{
     const d=new Date(),f=form(),p=st.pos;saveForm();
     const m={id:d.getTime()+'-'+Math.random().toString(36).slice(2,7),time:d.toISOString(),tgl:ymd(d),jam:hms(d),zona:tzOff(d),zonaNama:tzName(d),tglPanjang:fDate(d),
-      kode:f.kode,kab:f.kab,kec:f.kec,desa:f.desa,lokasi:f.lokasi,koord:f.koord,tah:f.tah,jen:f.jen,pet:f.pet,ket:f.ket,lat:p?p.lat:null,lon:p?p.lon:null,acc:p?p.acc:null,alt:p&&p.alt!=null?p.alt:null,gpsTime:p?p.t:null};
+      kode:f.kode,kab:f.kab,kec:f.kec,desa:f.desa,lokasi:f.lokasi,koord:f.koord,peran:f.peran,tah:f.tah,jen:f.jen,pet:f.pet,ket:f.ket,lat:p?p.lat:null,lon:p?p.lon:null,acc:p?p.acc:null,alt:p&&p.alt!=null?p.alt:null,gpsTime:p?p.t:null};
     if(f.map&&p&&(!st.map||dist(st.map,p)>5))await Promise.race([loadTiles(p.lat,p.lon),sleep(3500)]);
     renderStamp(c.getContext('2d'),c.width,c.height,m,f,st.map);
     let blob=await new Promise(r=>c.toBlob(r,'image/jpeg',.92));blob=await addExif(blob,m,d);
@@ -439,13 +449,13 @@ function openDetail(r,fresh){
   if(r.lat!=null){rows.push(['Koordinat',`${esc(fCoord(r.lat,r.lon))}<br><span class="muted">${esc(dms(r.lat,'LU','LS')+' '+dms(r.lon,'BT','BB'))}</span>`],
     ['Akurasi','±'+Math.round(r.acc)+' m'+(r.alt!=null?` • ketinggian ${Math.round(r.alt)} m`:'')],['Peta',`<a href="${mapsUrl(r)}" target="_blank" rel="noopener">Buka di Google Maps ↗</a>`])}
   else rows.push(['Koordinat','tidak tersedia']);
-  if(r.pet)rows.push(['Surveyor',esc(r.pet)]);if(r.koord)rows.push(['Koordinator',esc(r.koord)]);if(r.ket)rows.push(['Keterangan',esc(r.ket)]);
+  if(r.pet)rows.push([esc(r.peran||'Surveyor'),esc(r.pet)]);if(r.koord)rows.push(['Koordinator',esc(r.koord)]);if(r.ket)rows.push(['Keterangan',esc(r.ket)]);
   rows.push(['File',esc(`${r.name} • ${r.w}×${r.h} • ${(r.buf.byteLength/1024/1024).toFixed(1)} MB`)]);
   $('prevKv').innerHTML=rows.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join('');
   openSheet('shPrev');
 }
 function download(blob,name){const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;a.rel='noopener';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),30000)}
-function caption(r){return ['KNMP 2027 – '+r.jen,(r.kode&&r.kode!=='UMUM'?r.kode+' ':'')+r.lokasi,r.tah,r.pet&&('Surveyor: '+r.pet),`${r.tglPanjang} ${r.jam} ${r.zonaNama}`,r.lat!=null?fCoord(r.lat,r.lon):'',r.ket,r.lat!=null?mapsUrl(r):''].filter(Boolean).join('\n')}
+function caption(r){return ['KNMP 2027 – '+r.jen,(r.kode&&r.kode!=='UMUM'?r.kode+' ':'')+r.lokasi,r.tah,r.pet&&((r.peran||'Surveyor')+': '+r.pet),`${r.tglPanjang} ${r.jam} ${r.zonaNama}`,r.lat!=null?fCoord(r.lat,r.lon):'',r.ket,r.lat!=null?mapsUrl(r):''].filter(Boolean).join('\n')}
 async function shareRec(r){
   const file=new File([blobOf(r)],r.name,{type:'image/jpeg'});
   if(navigator.canShare&&navigator.canShare({files:[file]})){
@@ -488,7 +498,7 @@ function expTag(t){const k=[...new Set(t.map(r=>r.kode))];return k.length===1?lo
 function need(){const t=targets();if(!t.length){toast('Belum ada foto untuk diekspor');return null}return t}
 const COLS=[['No',(r,i)=>i+1],['Kode lokasi',r=>r.kode],['Kabupaten/Kota',r=>r.kab],['Kecamatan',r=>r.kec],['Desa/Kelurahan',r=>r.desa],['Tahap kegiatan',r=>r.tah],['Jenis foto',r=>r.jen],
   ['Keterangan',r=>r.ket],['Tanggal',r=>r.tgl],['Jam',r=>r.jam],['Zona waktu',r=>`${r.zonaNama} (UTC${r.zona})`],['Latitude',r=>r.lat!=null?r.lat.toFixed(7):''],['Longitude',r=>r.lon!=null?r.lon.toFixed(7):''],
-  ['Akurasi (m)',r=>r.acc!=null?Math.round(r.acc):''],['Ketinggian (m)',r=>r.alt!=null?Math.round(r.alt):''],['Surveyor',r=>r.pet],['Koordinator wilayah',r=>r.koord],['Nama file',r=>r.name],['Folder di ZIP',r=>zipPath(r)],['Google Maps',r=>r.lat!=null?mapsUrl(r):'']];
+  ['Akurasi (m)',r=>r.acc!=null?Math.round(r.acc):''],['Ketinggian (m)',r=>r.alt!=null?Math.round(r.alt):''],['Peran',r=>r.peran||'Surveyor'],['Nama pengambil foto',r=>r.pet],['Koordinator wilayah',r=>r.koord],['Nama file',r=>r.name],['Folder di ZIP',r=>zipPath(r)],['Google Maps',r=>r.lat!=null?mapsUrl(r):'']];
 const lokFolder=r=>r.kode==='UMUM'?'KNMP_UMUM_'+(slug(r.desa).slice(0,30)||'kegiatan'):`KNMP_${r.kode.replace('-','_')}_${slug(r.desa)}`;
 const zipPath=r=>`${lokFolder(r)}/${slug(r.jen)}/`;
 function csvText(list){const q=v=>`"${String(v??'').replace(/"/g,'""')}"`;return '﻿'+[COLS.map(c=>q(c[0])).join(';'),...list.map((r,i)=>COLS.map(c=>q(c[1](r,i))).join(';'))].join('\r\n')}
@@ -534,12 +544,12 @@ $('exRep').onclick=async()=>{
     const rng=t[0].tgl===t[t.length-1].tgl?t[0].tglPanjang:`${t[0].tglPanjang} – ${t[t.length-1].tglPanjang}`;
     let no=0;
     const body=groups.map(k=>{const g=items.filter(x=>x.r.kode===k),r0=g[0].r,svs=[...new Set(g.map(x=>x.r.pet).filter(Boolean))].join(', ');
-      return `<h2>${esc(k==='UMUM'?r0.lokasi:k+' · '+r0.lokasi)}</h2><p class="sub">Surveyor: ${esc(svs||'—')}${r0.koord?' • Koordinator wilayah: '+esc(r0.koord):''} • ${g.length} foto</p>`+
+      return `<h2>${esc(k==='UMUM'?r0.lokasi:k+' · '+r0.lokasi)}</h2><p class="sub">Diambil oleh: ${esc(svs||'—')}${r0.koord?' • Koordinator wilayah: '+esc(r0.koord):''} • ${g.length} foto</p>`+
       g.map(({r,src})=>`<section class="card"><img src="${src}"><table>
 <tr><th>No</th><td>${++no}</td></tr><tr><th>Jenis foto</th><td>${esc(r.jen)}</td></tr><tr><th>Tahap</th><td>${esc(r.tah)}</td></tr>
 <tr><th>Waktu</th><td>${esc(r.tglPanjang+', '+r.jam+' '+r.zonaNama)}</td></tr>
 <tr><th>Koordinat</th><td>${r.lat!=null?`${esc(fCoord(r.lat,r.lon))} (±${Math.round(r.acc)} m) – <a href="${mapsUrl(r)}">peta</a>`:'—'}</td></tr>
-${r.ket?`<tr><th>Keterangan</th><td>${esc(r.ket)}</td></tr>`:''}<tr><th>Surveyor</th><td>${esc(r.pet||'—')}</td></tr>
+${r.ket?`<tr><th>Keterangan</th><td>${esc(r.ket)}</td></tr>`:''}<tr><th>${esc(r.peran||'Surveyor')}</th><td>${esc(r.pet||'—')}</td></tr>
 <tr><th>File</th><td>${esc(r.name)}</td></tr></table></section>`).join('\n')}).join('\n');
     const html=`<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Dokumentasi Survei KNMP 2027</title>
 <style>body{font:14px/1.45 system-ui,sans-serif;color:#111;max-width:900px;margin:0 auto;padding:20px}h1{font-size:20px;margin:0 0 4px}h2{font-size:17px;margin:26px 0 2px;padding-top:10px;border-top:2px solid #333}.sub{color:#555;margin:0 0 14px}
@@ -562,7 +572,8 @@ $('shutter').onclick=capture;
 $('flipBtn').onclick=()=>{if(st.native){if(gate())$('fileCam').click();return}st.facing=st.facing==='environment'?'user':'environment';startCam()};
 ['fPet','fKet','fDesa','fWil','qTah','qJen','fMap','fSize','fPos'].forEach(id=>$(id).addEventListener('input',()=>{saveForm();lokUi();updPrev()}));
 ['qTah','qJen'].forEach(id=>$(id).addEventListener('change',()=>{saveForm();updPrev()}));
-$('fLok').addEventListener('change',()=>{const m=lokMeta();if(m.sv)$('fPet').value=m.sv;saveForm();lokUi();updPrev()});
+$('fLok').addEventListener('change',()=>{autoName();saveForm();lokUi();updPrev()});
+$('fPer').addEventListener('change',()=>{const t=timOf(),m=lokMeta();if(t.kab&&(!m.ok||!m.kab||m.kab!==KAB[t.kab]))$('fLok').value='K'+t.kab;autoName();saveForm();lokUi();updPrev()});
 function begin(native){
   $('start').style.display='none';LS.set('started',native?'native':'cam');st.native=native;
   startGeo();if(native){$('noCam').style.display='flex'}else startCam();
